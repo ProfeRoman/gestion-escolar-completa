@@ -125,3 +125,28 @@ document.getElementById('alumnoForm').addEventListener('submit', async (e) => {
 
 // Arrancamos!
 window.onload = listarAlumnos;
+
+function toggleChat() {
+    document.getElementById('chat-box').classList.toggle('chat-hidden');
+}
+
+function enviarMensaje() {
+    const input = document.getElementById('user-input');
+    const msgs = document.getElementById('chat-messages');
+    if (!input.value.trim()) return;
+
+    // Mostrar mensaje del usuario
+    msgs.innerHTML += `<div class="msg-user">${input.value}</div>`;
+    const texto = input.value.toLowerCase();
+    input.value = "";
+
+    // Respuesta simulada (Mañana lo conectamos a Java)
+    setTimeout(() => {
+        let rpta = "No estoy seguro de eso, preguntame por 'comedor' o 'lista'.";
+        if(texto.includes("comedor")) rpta = "Hoy tenemos el menú listo. ¿Querés ver quiénes almuerzan?";
+        if(texto.includes("lista")) rpta = "La lista de alumnos está actualizada en el dashboard principal.";
+        
+        msgs.innerHTML += `<div class="msg-bot">${rpta}</div>`;
+        msgs.scrollTop = msgs.scrollHeight;
+    }, 600);
+}
