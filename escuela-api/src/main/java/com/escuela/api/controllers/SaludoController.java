@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST,RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RestController
 @RequestMapping("/saludo")
 public class SaludoController {
@@ -44,19 +44,21 @@ public class SaludoController {
 
     // Método para cambiar el estado del comedor (UPDATE)
     @PutMapping("/{id}/comedor")
-    public Alumno cambiarComedor(@PathVariable Long id) {
-        // 1. Buscamos al alumno por ID
-        Alumno alumno = alumnoRepository.findById(id).orElseThrow();
-
-        // 2. Invertimos el valor booleano (si es true -> false / si es false -> true)
+public Alumno cambiarComedor(@PathVariable Long id) {
+    // 1. Buscamos el alumno en la base de datos
+    Alumno alumno = alumnoRepository.findById(id).orElse(null);
+    
+    if (alumno != null) {
+        // 2. Invertimos el estado (si era true, pasa a false)
         alumno.setSeQuedaAComer(!alumno.isSeQuedaAComer());
-
-        // 3. Guardamos los cambios y devolvemos el alumno actualizado
-        System.out.println("Cambiando estado de comedor para: " + alumno.getNombre());
+        
+        // 3. ¡ESTA ES LA CLAVE! Guardamos el cambio para que Hibernate haga el UPDATE
         return alumnoRepository.save(alumno);
     }
-    // Método para EDITAR un alumno completo
+    return null;
+}
 
+    // Método para EDITAR un alumno completo
     @PutMapping("/{id}")
     public Alumno actualizarAlumno(@PathVariable Long id, @RequestBody Alumno alumnoActualizado) {
         return alumnoRepository.findById(id)
@@ -75,5 +77,16 @@ public class SaludoController {
     @GetMapping("/buscar")
     public List<Alumno> buscarAlumnos(@RequestParam String nombre) {
         return alumnoRepository.findByNombreContainingIgnoreCase(nombre);
+    }
+
+    // Nuevo: El bot consulta el total de alumnos y cuántos comen
+    @GetMapping("/stats")
+    public String obtenerEstadisticas() {
+        long total = alumnoRepository.count();
+        long comen = alumnoRepository.findAll().stream()
+                .filter(a -> a.isSeQuedaAComer())
+                .count();
+
+        return "Actualmente hay " + total + " alumnos registrados y hoy se quedan a comer " + comen + " chicos.";
     }
 }

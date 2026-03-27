@@ -18,6 +18,15 @@ public class Alumno {
     private String apellido;
     private String dni;
     private boolean seQuedaAComer;
+    private String telefonoPadre; // Formato: 549341XXXXXXX (Código país + característica + número)
+
+    public String getTelefonoPadre() {
+        return telefonoPadre;
+    }
+
+    public void setTelefonoPadre(String telefonoPadre) {
+        this.telefonoPadre = telefonoPadre;
+    }
 
     // Constructor vacío (Obligatorio para JPA)
     public Alumno() {

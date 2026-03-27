@@ -1,152 +1,152 @@
-const API_URL = "http://127.0.0.1:8080/saludo";
-let idEdicion = null;
+const API_URL = 'http://localhost:8080/saludo';
+let listaAlumnosLocal = []; // Para búsqueda instantánea sin recargar
 
-// 1. FUNCIÓN PRINCIPAL: Cargar la lista completa al iniciar
+document.addEventListener("DOMContentLoaded", () => {
+    listarAlumnos();
+});
+
+// 1. OBTENER ALUMNOS (GET)
 async function listarAlumnos() {
-    console.log("Cargando Dashboard...");
     try {
         const res = await fetch(API_URL);
-        const alumnos = await res.json();
-        renderizarTarjetas(alumnos);
+        listaAlumnosLocal = await res.json();
+        renderizarTarjetas(listaAlumnosLocal);
     } catch (e) {
-        console.error("Error al listar alumnos:", e);
+        console.error("Error al listar:", e);
+        document.getElementById('alumnosContainer').innerHTML = "<p style='color:red'>Error al conectar con el servidor.</p>";
     }
 }
 
-// 2. EL "MOLDE": Esta función dibuja las tarjetas en el HTML
-function renderizarTarjetas(lista) {
-    const container = document.getElementById('alumnosContainer');
-    container.innerHTML = ''; // Limpiamos el contenedor
+// 2. DIBUJAR TARJETAS (Renderizado dinámico)
+function renderizarTarjetas(alumnos) {
+    const contenedor = document.getElementById('alumnosContainer');
+    const contador = document.getElementById('contadorComensales');
+    
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+    let comensales = 0;
 
-    lista.forEach((alumno) => {
-        const comedorStatus = alumno.seQuedaAComer ? "✅ Almuerza" : "❌ No Come";
-        
-        container.innerHTML += `
+    alumnos.forEach(alumno => {
+        if (alumno.seQuedaAComer) comensales++;
+        const tel = alumno.telefonoPadre || "";
+
+        contenedor.innerHTML += `
             <div class="card">
                 <h3>${alumno.nombre} ${alumno.apellido}</h3>
                 <p><strong>DNI:</strong> ${alumno.dni}</p>
                 <p><strong>ID:</strong> #${alumno.id}</p>
                 
-                <div class="card-actions">
-                    <button class="btn-card btn-comedor" onclick="cambiarComida(${alumno.id})">
-                        ${comedorStatus}
-                    </button>
+                <div class="estado-comedor" 
+                     onclick="cambiarEstadoComedor(${alumno.id})" 
+                     style="cursor:pointer; padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px; 
+                            background: ${alumno.seQuedaAComer ? 'rgba(0, 242, 254, 0.1)' : 'rgba(239, 68, 68, 0.1)'};
+                            color: ${alumno.seQuedaAComer ? '#00f2fe' : '#ef4444'}; font-weight: bold; border: 1px solid ${alumno.seQuedaAComer ? '#00f2fe' : '#ef4444'};">
+                    ${alumno.seQuedaAComer ? '✅ Almuerza' : '❌ No Come'}
                 </div>
 
                 <div class="card-actions">
-                    <button class="btn-card btn-edit" onclick="prepararEdicion(${alumno.id}, '${alumno.nombre}', '${alumno.apellido}', '${alumno.dni}')">
-                        Editar
-                    </button>
-                    <button class="btn-card btn-delete" onclick="borrarAlumno(${alumno.id})">
-                        Borrar
-                    </button>
+                    <button class="btn-card btn-whatsapp" onclick="enviarWhatsapp('${tel}', '${alumno.nombre}')">Notificar Padre 💬</button>
+                    <button class="btn-card btn-delete" onclick="borrarAlumno(${alumno.id})">Borrar</button>
                 </div>
             </div>`;
     });
 
-    // Actualizamos el contador de comensales con la lista actual
-    actualizarContador(lista);
+    if (contador) {
+        contador.innerHTML = `Hay ${listaAlumnosLocal.length} alumnos registrados y hoy comen ${comensales} chicos.`;
+    }
 }
 
-// 3. BUSCADOR EN VIVO: Se activa con onkeyup en el HTML
-async function buscar() {
-    const term = document.getElementById('inputBusqueda').value.trim();
-    
-    // Si borrás el buscador, volvemos a la lista completa
-    if (term === "") {
-        listarAlumnos();
-        return;
-    }
-
+// 3. FUNCIÓN DE CHECK-IN (PUT) - ¡Esta es la que faltaba!
+async function cambiarEstadoComedor(id) {
     try {
-        // Llamamos a la ruta de búsqueda de tu Java
-        const res = await fetch(`${API_URL}/buscar?nombre=${term}`);
-        const filtrados = await res.json();
-        
-        // Dibujamos solo los que coincidieron
-        renderizarTarjetas(filtrados);
+        // Llama al método cambiarComedor de tu Java
+        const res = await fetch(`${API_URL}/${id}/comedor`, {
+            method: 'PUT'
+        });
+
+        if (res.ok) {
+            listarAlumnos(); // Refresca la lista para mostrar el cambio
+        }
     } catch (e) {
-        console.error("Error en la búsqueda:", e);
+        console.error("Error en check-in:", e);
     }
 }
 
-// 4. CONTADOR: Suma los "Sí" de la lista que esté en pantalla
-function actualizarContador(lista) {
-    const total = lista.filter(a => a.seQuedaAComer === true).length;
-    const cuadroTotal = document.getElementById('contadorComensales');
-    if (cuadroTotal) {
-        cuadroTotal.innerHTML = `Total para el comedor: <strong>${total}</strong>`;
-    }
+// 4. BUSCADOR (Sincronizado con onkeyup="buscar()")
+function buscar() {
+    const query = document.getElementById('inputBusqueda').value.toLowerCase();
+    const filtrados = listaAlumnosLocal.filter(a => 
+        a.nombre.toLowerCase().includes(query) || 
+        a.apellido.toLowerCase().includes(query) ||
+        a.dni.includes(query)
+    );
+    renderizarTarjetas(filtrados);
 }
 
-// 5. ACCIONES: Comedor, Borrar y Editar
-async function cambiarComida(id) {
-    await fetch(`${API_URL}/${id}/comedor`, { method: 'PUT' });
-    listarAlumnos();
-}
-
-async function borrarAlumno(id) {
-    if (confirm("¿Eliminar alumno?")) {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        listarAlumnos();
-    }
-}
-
-function prepararEdicion(id, nombre, apellido, dni) {
-    document.getElementById('nombre').value = nombre;
-    document.getElementById('apellido').value = apellido;
-    document.getElementById('dni').value = dni;
-    idEdicion = id;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// 6. FORMULARIO: Guardar o Actualizar
-document.getElementById('alumnoForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const alumno = {
+// 5. AGREGAR ALUMNO (POST)
+async function agregarAlumno() {
+    const nuevo = {
         nombre: document.getElementById('nombre').value,
         apellido: document.getElementById('apellido').value,
-        dni: document.getElementById('dni').value
+        dni: document.getElementById('dni').value,
+        telefonoPadre: document.getElementById('telefono').value,
+        seQuedaAComer: false 
     };
 
-    const url = idEdicion ? `${API_URL}/${idEdicion}` : API_URL;
-    const metodo = idEdicion ? 'PUT' : 'POST';
+    if (!nuevo.nombre || !nuevo.apellido || !nuevo.dni) return alert("Faltan datos obligatorios.");
 
-    await fetch(url, {
-        method: metodo,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(alumno)
-    });
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(nuevo)
+        });
 
-    idEdicion = null;
-    document.getElementById('alumnoForm').reset();
-    listarAlumnos();
-});
+        if (res.ok) {
+            document.getElementById('alumnoForm').reset();
+            listarAlumnos();
+        }
+    } catch (e) { console.error("Error al agregar:", e); }
+}
 
-// Arrancamos!
-window.onload = listarAlumnos;
+// 6. BORRAR (DELETE)
+async function borrarAlumno(id) {
+    if (!confirm("¿Eliminar este alumno?")) return;
+    try {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        listarAlumnos();
+    } catch (e) { console.error(e); }
+}
+
+// 7. WHATSAPP
+function enviarWhatsapp(telefono, nombre) {
+    if (!telefono || telefono === "null" || telefono.trim() === "") return alert("No hay teléfono.");
+    const msg = `Hola! Desde la Escuela informamos que ${nombre} se queda hoy al comedor.`;
+    window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// 8. CHATBOT
+async function enviarMensaje() {
+    const input = document.getElementById('user-input');
+    const msgs = document.getElementById('chat-messages');
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    msgs.innerHTML += `<div class="msg-user">${texto}</div>`;
+    input.value = "";
+
+    try {
+        if (texto.toLowerCase().includes("comedor") || texto.toLowerCase().includes("cuantos")) {
+            const res = await fetch(`${API_URL}/stats`);
+            const rta = await res.text();
+            msgs.innerHTML += `<div class="msg-bot">${rta}</div>`;
+        } else {
+            msgs.innerHTML += `<div class="msg-bot">Probá preguntando "¿Cuántos comen?".</div>`;
+        }
+        msgs.scrollTop = msgs.scrollHeight;
+    } catch (e) { console.error(e); }
+}
 
 function toggleChat() {
     document.getElementById('chat-box').classList.toggle('chat-hidden');
-}
-
-function enviarMensaje() {
-    const input = document.getElementById('user-input');
-    const msgs = document.getElementById('chat-messages');
-    if (!input.value.trim()) return;
-
-    // Mostrar mensaje del usuario
-    msgs.innerHTML += `<div class="msg-user">${input.value}</div>`;
-    const texto = input.value.toLowerCase();
-    input.value = "";
-
-    // Respuesta simulada (Mañana lo conectamos a Java)
-    setTimeout(() => {
-        let rpta = "No estoy seguro de eso, preguntame por 'comedor' o 'lista'.";
-        if(texto.includes("comedor")) rpta = "Hoy tenemos el menú listo. ¿Querés ver quiénes almuerzan?";
-        if(texto.includes("lista")) rpta = "La lista de alumnos está actualizada en el dashboard principal.";
-        
-        msgs.innerHTML += `<div class="msg-bot">${rpta}</div>`;
-        msgs.scrollTop = msgs.scrollHeight;
-    }, 600);
 }
