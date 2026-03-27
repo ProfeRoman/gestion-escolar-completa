@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestión de Alumnos - Escuela Alcorta</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Alumnos de la Escuela</h1>
+
+      <form id="alumnoForm">
+        <input type="text" id="nombre" placeholder="Nombre" required />
+        <input type="text" id="apellido" placeholder="Apellido" required />
+        <input type="text" id="dni" placeholder="DNI" required />
+        <button type="submit">Agregar Alumno</button>
+      </form>
+
+      <input
+        type="text"
+        id="inputBusqueda"
+        placeholder="🔍 Buscar alumno por nombre..."
+        onkeyup="buscar()"
+        style="
+          width: 100%;
+          padding: 10px;
+          margin-bottom: 10px;
+          background: #1e1e1e;
+          color: white;
+          border: 1px solid #bb86fc;
+        "
+      />
+
+      <div id="alumnosContainer"></div>
+
+      <div
+        id="contadorComensales"
+        style="
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #1e1e1e;
+          border-radius: 8px;
+          color: #03dac6;
+          font-weight: bold;
+          text-align: center;
+          border: 1px solid #03dac6;
+        "
+      >
+        Cargando total de comensales...
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

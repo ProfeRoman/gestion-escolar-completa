@@ -1,0 +1,11 @@
+# Java / Spring
+**/target/
+**/.mvn/
+**/nbproject/private/
+**/build/
+**/.nb-gradle/
+**/*.class
+
+# Frontend
+**/.DS_Store
+**/node_modules/
