@@ -1,38 +1,38 @@
 package com.escuela.api.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name = "alumnos") // Así se va a llamar la tabla en MySQL
+@Table(name = "alumnos")
 public class Alumno {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String nombre;
     private String apellido;
     private String dni;
-    private boolean seQuedaAComer;
-    private String telefonoPadre; // Formato: 549341XXXXXXX (Código país + característica + número)
+    private boolean pideCalentito;
+    @Column(name = "telefono_padre")
+    private String telefonoPadre;
+    @Column(name = "hora_inicio_taller")
+    private String horaInicioTaller;
+    @Column(name = "turno_comedor")
+    private String turnoComedor;
+    private Double nota;
 
-    public String getTelefonoPadre() {
-        return telefonoPadre;
+    public Double getNota() {
+        return nota;
     }
 
-    public void setTelefonoPadre(String telefonoPadre) {
-        this.telefonoPadre = telefonoPadre;
+    public void setNota(Double nota) {
+        this.nota = nota;
     }
 
-    // Constructor vacío (Obligatorio para JPA)
     public Alumno() {
     }
 
-    // Getters y Setters (Para que Spring pueda leer y escribir los datos)
+    // Getters y Setters
     public Long getId() {
         return id;
     }
@@ -65,11 +65,27 @@ public class Alumno {
         this.dni = dni;
     }
 
-    public boolean isSeQuedaAComer() {
-        return seQuedaAComer;
+    public String getTelefonoPadre() {
+        return telefonoPadre;
     }
 
-    public void setSeQuedaAComer(boolean seQuedaAComer) {
-        this.seQuedaAComer = seQuedaAComer;
+    public void setTelefonoPadre(String telefonoPadre) {
+        this.telefonoPadre = telefonoPadre;
+    }
+
+    public String getHoraInicioTaller() {
+        return horaInicioTaller;
+    }
+
+    public void setHoraInicioTaller(String horaInicioTaller) {
+        this.horaInicioTaller = horaInicioTaller;
+    }
+
+    public String getTurnoComedor() {
+        return turnoComedor;
+    }
+
+    public void setTurnoComedor(String turnoComedor) {
+        this.turnoComedor = turnoComedor;
     }
 }
