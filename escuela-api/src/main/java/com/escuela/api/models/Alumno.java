@@ -13,7 +13,7 @@ public class Alumno {
     private String apellido;
     private String dni;
     @Column(name = "pide_calentito")
-    private boolean pideCalentito;
+    private Boolean pideCalentito;
     @Column(name = "telefono_padre")
     private String telefonoPadre;
     @Column(name = "hora_inicio_taller")
@@ -109,4 +109,13 @@ public class Alumno {
     public void setTurnoComedor(String turnoComedor) {
         this.turnoComedor = turnoComedor;
     }
+
+    public Boolean getPideCalentito() {
+        return pideCalentito;
+    }
+
+    public void setPideCalentito(Boolean pideCalentito) {
+        this.pideCalentito = pideCalentito;
+    }
+    
 }
