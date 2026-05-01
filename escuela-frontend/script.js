@@ -1,7 +1,10 @@
-const API_ALUMNOS = 'http://localhost:8080/alumnos';
-const API_CALENTITOS = 'http://127.0.0.1:8080/api/calentitos';
-//const API_ALUMNOS = 'https://gestion-escolar-completa-production.up.railway.app/alumnos';
-//const API_CALENTITOS = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos';
+//CONFIGURACION LOCAL
+//const API_ALUMNOS = 'http://localhost:8080/alumnos';
+//const API_CALENTITOS = 'http://127.0.0.1:8080/api/calentitos';
+
+//CONFIGURACION RAILWAY (NUBE)
+const API_ALUMNOS = 'https://gestion-escolar-completa-production.up.railway.app/alumnos';
+const API_CALENTITOS = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos';
 
 let modoAdmin = false;
 let alumnoLogueado = null;
