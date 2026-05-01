@@ -20,6 +20,26 @@ public class Alumno {
     @Column(name = "turno_comedor")
     private String turnoComedor;
     private Double nota;
+    @Column(name = "telefono_alumno")
+    private String telefonoAlumno;
+    @Column(name = "password")
+    private String password;
+
+    public String getTelefonoAlumno() {
+        return telefonoAlumno;
+    }
+
+    public void setTelefonoAlumno(String telefonoAlumno) {
+        this.telefonoAlumno = telefonoAlumno;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     public Double getNota() {
         return nota;

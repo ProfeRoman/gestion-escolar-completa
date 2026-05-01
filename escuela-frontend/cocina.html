@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PANEL DE COCINA - E.E.T.P. 275</title>
+    <style>
+      /* --- ESTILOS GENERALES --- */
+      body {
+        font-family: sans-serif;
+        background: #121212;
+        color: white;
+        padding: 20px;
+      }
+
+      /* --- ENCABEZADO Y CONTADORES --- */
+      .header-cocina {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 2px solid #e67e22;
+        margin-bottom: 20px;
+      }
+
+      .titulo-seccion h1 {
+        color: #e67e22;
+        margin: 0;
+        font-size: 1.8rem;
+      }
+
+      .indicadores-container {
+        display: flex;
+        gap: 15px;
+      }
+
+      .caja-contador {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 5px 15px;
+        text-align: center;
+        min-width: 100px;
+      }
+
+      .caja-contador.total { border-color: #28a745; }
+      .caja-contador.pendientes { border-color: #ffc107; }
+
+      .numero {
+        font-size: 1.6rem;
+        color: #fff;
+      }
+
+      .etiqueta {
+        display: block;
+        font-size: 0.6rem;
+        color: #888;
+        margin-bottom: -5px;
+      }
+
+      /* --- GRILLA DE TICKETS --- */
+      .grid-cocina {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+      }
+
+      .ticket {
+        background: #fff;
+        color: #000;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 10px solid #ff8c00;
+        position: relative;
+      }
+
+      .recreo-tag {
+        background: #eee;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+      }
+
+      .btn-entregar {
+        width: 100%;
+        margin-top: 15px;
+        padding: 10px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .btn-volver {
+        display: inline-block;
+        padding: 8px 15px;
+        margin-bottom: 20px;
+        background-color: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+
+    <a href="index.html" class="btn-volver">← Volver al Inicio</a>
+
+    <header class="header-cocina">
+      <div class="titulo-seccion">
+        <span>👨‍🍳</span>
+        <h1>PEDIDOS PENDIENTES</h1>
+      </div>
+
+      <div class="indicadores-container">
+        <div class="caja-contador total">
+          <span class="etiqueta">TOTAL VENDIDOS</span>
+          <strong id="contador-total" class="numero">0</strong>
+        </div>
+        <div class="caja-contador pendientes">
+          <span class="etiqueta">FALTAN ENTREGAR</span>
+          <strong id="contador-pendientes" class="numero">0</strong>
+        </div>
+      </div>
+    </header>
+
+    <div id="contenedorCocina" class="grid-cocina"></div>
+
+    <script>
+      // 1. CONFIGURACIÓN LOCAL
+      const API_PENDIENTES = "http://localhost:8080/api/calentitos/pendientes";
+      const API_ENTREGAR = "http://localhost:8080/api/calentitos/entregar";
+
+      //CONFIGURACIÓN SERVIDOR
+      //const API_PENDIENTES = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos/pendientes';
+      //const API_ENTREGAR = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos/entregar';
+
+
+
+      const opciones = {
+        timeZone: "America/Argentina/Buenos_Aires",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      };
+      const hoy = new Intl.DateTimeFormat("en-CA", opciones).format(new Date());
+
+      // 2. PERSISTENCIA (localStorage)
+      let datosGuardados = JSON.parse(localStorage.getItem("contador_cocina"));
+      
+      // Reiniciar si es un nuevo día
+      if (datosGuardados && datosGuardados.fecha !== hoy) {
+        localStorage.removeItem("contador_cocina");
+        datosGuardados = null;
+      }
+
+      let totalVendidoHoy = datosGuardados ? datosGuardados.total : 0;
+      let idsContados = new Set(datosGuardados ? datosGuardados.ids : []);
+
+      // 3. LOGA PRINCIPAL: Cargar pedidos
+      async function cargarPendientes() {
+        try {
+          const res = await fetch(API_PENDIENTES);
+          const data = await res.json();
+
+          // Filtrar por fecha de hoy
+          const pedidos = data.filter((p) => p.fecha === hoy);
+
+          const contenedor = document.getElementById("contenedorCocina");
+          contenedor.innerHTML = "";
+          let huboCambios = false;
+
+          pedidos.forEach((p) => {
+            // Contar nuevos pedidos únicos
+            if (!idsContados.has(p.id)) {
+              totalVendidoHoy++;
+              idsContados.add(p.id);
+              huboCambios = true;
+            }
+
+            // Crear el Ticket visualmente
+            const div = document.createElement("div");
+            div.className = "ticket";
+            div.innerHTML = `
+                <span class="recreo-tag">RECREO: ${p.recreo || "N/A"}</span>
+                <h2>${p.alumno.apellido}, ${p.alumno.nombre}</h2>
+                <p>Pedido #${p.id} - ${p.categoria || "General"}</p>
+                <button class="btn-entregar" onclick="marcarEntregado(${p.id})">
+                  MARCAR ENTREGADO
+                </button>
+            `;
+            contenedor.appendChild(div);
+          });
+
+          // Actualizar UI
+          document.getElementById("contador-total").innerText = totalVendidoHoy;
+          document.getElementById("contador-pendientes").innerText = pedidos.length;
+
+          // Guardar si hubo novedades
+          if (huboCambios) {
+            localStorage.setItem("contador_cocina", JSON.stringify({
+              fecha: hoy,
+              total: totalVendidoHoy,
+              ids: Array.from(idsContados)
+            }));
+          }
+        } catch (error) {
+          console.error("Error cargando datos:", error);
+        }
+      }
+
+      // 4. ACCIÓN: Entregar
+      async function marcarEntregado(id) {
+        if (!confirm("¿Confirmar entrega?")) return;
+        try {
+          const res = await fetch(`${API_ENTREGAR}/${id}`, { method: "PUT" });
+          if (res.ok) cargarPendientes();
+        } catch (err) {
+          alert("Error de conexión");
+        }
+      }
+
+      // 5. INICIO
+      setInterval(cargarPendientes, 10000);
+      cargarPendientes();
+    </script>
+  </body>
+</html>

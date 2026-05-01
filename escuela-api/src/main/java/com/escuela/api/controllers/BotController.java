@@ -34,6 +34,10 @@ public class BotController {
         if (pregunta.contains("hola")) {
             return "¡Hola Román! Soy el asistente de la Escuela. ¿En qué puedo ayudarte con los alumnos?";
         }
+        
+        if(pregunta.contains("quien te creó?")){
+            return "Alumnos de 6to año de la terminalidad Informática";
+        }
 
         return "Todavía no entiendo esa pregunta, pero puedo decirte cuántos alumnos comen hoy.";
     }

@@ -2,6 +2,7 @@ package com.escuela.api.controllers;
 
 import com.escuela.api.models.Alumno;
 import com.escuela.api.repositories.AlumnoRepository;
+import com.escuela.api.services.TareaProgramadaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,8 @@ import java.util.Map;
 public class AlumnoController {
 
     @Autowired
+    private TareaProgramadaService tareaProgramadaService;
+    @Autowired
     private AlumnoRepository alumnoRepository;
 
     // 1. LISTAR TODOS (Para el Profe)
@@ -32,32 +35,58 @@ public class AlumnoController {
         return alumnoRepository.findByDni(dni);
     }
 
-    // 3. REGISTRO DE COMEDOR (Recuperando la elección del alumno)
+    // 3. REGISTRO DE COMEDOR (Con Doble Validación de Seguridad)
     @PutMapping("/{id}/comedor")
     public ResponseEntity<?> actualizarComedor(@PathVariable Long id,
             @RequestParam boolean seQueda,
-            @RequestParam(required = false) String turnoElegido) { // Agregamos esto
-
-        // Mantenemos tu restricción horaria (acá podés poner las 9:00 AM)
-        LocalTime ahora = LocalTime.now();
-        if (ahora.isAfter(LocalTime.of(9, 0))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("El registro para el comedor cierra a las 9:00 AM.");
-        }
+            @RequestParam(required = false) String turnoElegido,
+            @RequestParam(required = false) String pinIngresado, // Nuevo: para la Web
+            @RequestParam(required = false) String nroCelular) { // Nuevo: para el Bot
 
         Alumno alumno = alumnoRepository.findById(id).orElse(null);
         if (alumno == null) {
             return ResponseEntity.notFound().build();
         }
 
+        // --- INICIO DE VALIDACIÓN DE SEGURIDAD ---
+        // A. Si la petición viene con nroCelular (Bot)
+        if (nroCelular != null && !nroCelular.isEmpty()) {
+            if (alumno.getTelefonoAlumno() == null) {
+                // Vinculación automática la primera vez
+                alumno.setTelefonoAlumno(nroCelular);
+                alumnoRepository.save(alumno);
+            } else if (!alumno.getTelefonoAlumno().equals(nroCelular)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Error: Este DNI ya está vinculado a otro celular.");
+            }
+        } // B. Si viene desde la Web (PC)
+        else {
+            if (alumno.getPassword() == null) {
+                // Registro de PIN la primera vez
+                if (pinIngresado == null || pinIngresado.isEmpty()) {
+                    return ResponseEntity.badRequest().body("Debes elegir un PIN de seguridad.");
+                }
+                alumno.setPassword(pinIngresado);
+                alumnoRepository.save(alumno);
+            } else if (!alumno.getPassword().equals(pinIngresado)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("PIN incorrecto.");
+            }
+        }
+        // --- FIN DE VALIDACIÓN DE SEGURIDAD ---
+
+        // Mantenemos tu restricción horaria
+        LocalTime ahora = LocalTime.now();
+        if (ahora.isAfter(LocalTime.of(9, 0))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("El registro para el comedor cierra a las 9:00 AM.");
+        }
+
         if (seQueda) {
-            // RESTRICCIÓN DE LA 275: Si tiene taller a las 13:00, no puede elegir 12:40
             if ("13:00".equals(alumno.getHoraInicioTaller()) && "12:40".equals(turnoElegido)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("No podés elegir 12:40 porque tenés taller a las 13:00 hs.");
             }
-
-            // Guardamos el turno que el alumno eligió en el Front
             alumno.setTurnoComedor(turnoElegido);
         } else {
             alumno.setTurnoComedor("No");
@@ -92,5 +121,11 @@ public class AlumnoController {
             resumen.put((String) fila[0], (Long) fila[1]);
         }
         return resumen;
+    }
+
+    @PutMapping("/reset-comedor")
+    public ResponseEntity<String> resetearComedor() {
+        tareaProgramadaService.resetDiarioComedor(); // Llama a la función que ya tenés
+        return ResponseEntity.ok("Comedor reseteado correctamente");
     }
 }

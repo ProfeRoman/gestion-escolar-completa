@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen Comedor - E.E.T.P. 275</title>
+    <link rel="stylesheet" href="comedor.css">
+</head>
+<body>
+
+    <a href="index.html" class="btn-volver">← Volver al Inicio</a>
+
+    <h1>📊 Resumen de Comedor</h1>
+
+    <button onclick="forzarReset()" 
+        style="position: absolute; top: 10px; right: 10px; background-color: #d9534f; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 1000;">
+    🔄 INICIAR NUEVO DÍA
+    </button>
+
+    <div id="panelComedor">
+        </div>
+
+    <script>
+        // 1. DIRECCIONES DE LA API (Mantenemos ambas para el futuro Deploy)
+        const API_RESUMEN = 'http://localhost:8080/alumnos/comedor/resumen';
+        // const API_RESUMEN = 'https://gestion-escolar-completa-production.up.railway.app/alumnos/comedor/resumen';
+
+        // 2. CONFIGURACIÓN DE FECHA (Zona Horaria Argentina)
+        const opciones = { 
+            timeZone: 'America/Argentina/Buenos_Aires', 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        };
+        // Formato ISO (AAAA-MM-DD) para filtrar en la API
+        const hoy = new Intl.DateTimeFormat('en-CA', opciones).format(new Date());
+
+        /**
+         * Función para actualizar los datos del comedor
+         */
+        async function actualizarContadores() {
+            try {
+                // Enviamos la fecha como parámetro para que el backend filtre automáticamente
+                const res = await fetch(`${API_RESUMEN}?fecha=${hoy}`);
+                
+                if (!res.ok) throw new Error("Error en la respuesta de la API");
+
+                const datos = await res.json();
+                const container = document.getElementById('panelComedor');
+                container.innerHTML = '';
+
+                // Convertimos el Map de Java { "11:20": 14 } en un array iterable
+                const turnos = Object.entries(datos);
+
+                if (turnos.length === 0) {
+                    container.innerHTML = `<p style="color: white; text-align: center;">No hay registros para hoy (${hoy})</p>`;
+                    return;
+                }
+
+                for (const [turno, cantidad] of turnos) {
+                    
+                    // Lógica de Semáforo (Verde, Naranja, Rojo)
+                    let color = "#4CAF50"; // Verde (Bajo)
+                    if (cantidad > 15 && cantidad <= 30) color = "#FF9800"; // Naranja (Medio)
+                    if (cantidad > 30) color = "#f44336"; // Rojo (Alto)
+
+                    // Inyectamos la tarjeta en el HTML
+                    container.innerHTML += `
+                        <div class="card-comedor">
+                            <div class="reloj">⏰ Turno: ${turno} hs</div>
+                            <div class="cantidad" style="color: ${color}">${cantidad}</div>
+                            <div class="etiqueta">ALUMNOS ANOTADOS</div>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error("Error al conectar con la API de comedor:", e);
+                document.getElementById('panelComedor').innerHTML = 
+                    `<p style="color: white; text-align: center;">Buscando conexión con el servidor...</p>`;
+            }
+        }
+
+        // Inicio inmediato y actualización cada 30 segundos
+        actualizarContadores();
+        setInterval(actualizarContadores, 30000);
+
+        // --- FUNCIÓN DE RESET (AGREGAR AL FINAL) ---
+async function forzarReset() {
+    if (!confirm("¿Limpiar la lista de hoy?")) return;
+    try {
+        // Usamos la ruta local porque ya vimos que tu backend en 8080 está vivo
+        const res = await fetch('http://localhost:8080/alumnos/reset-comedor', { 
+            method: 'PUT' 
+    });
+        if (res.ok) {
+            alert("✅ ¡Reseteado!");
+            actualizarContadores(); // Esto refresca tus tarjetas de colores
+        } else {
+            alert("El servidor no pudo resetear.");
+        }
+    } catch (e) {
+        alert("Sin conexión con el servidor local.");
+    }
+}
+    </script>
+
+    <style>
+        /* Estilos integrados para el botón de volver */
+        .btn-volver {
+            display: inline-block; 
+            padding: 8px 15px; 
+            margin: 10px; 
+            background-color: #6c757d; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            font-family: sans-serif; 
+            font-size: 14px; 
+            font-weight: bold;
+        }
+    </style>
+</body>
+</html>
