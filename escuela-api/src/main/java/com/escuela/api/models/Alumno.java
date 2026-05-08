@@ -122,6 +122,5 @@ public class Alumno {
 
     public void setPideCalentito(Boolean pideCalentito) {
         this.pideCalentito = pideCalentito;
-    }
-    
+    }     
 }

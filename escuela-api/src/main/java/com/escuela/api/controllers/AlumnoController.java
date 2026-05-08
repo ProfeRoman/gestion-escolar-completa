@@ -35,7 +35,7 @@ public class AlumnoController {
         return alumnoRepository.findByDni(dni);
     }
 
-    // 3. REGISTRO DE COMEDOR (Con Doble Validación de Seguridad)
+    // 3. REGISTRO DE COMEDOR (Con Doble Validación de Seguridad y Cupos)
     @PutMapping("/{id}/comedor")
     public ResponseEntity<?> actualizarComedor(@PathVariable Long id,
             @RequestParam boolean seQueda,
@@ -49,20 +49,16 @@ public class AlumnoController {
         }
 
         // --- INICIO DE VALIDACIÓN DE SEGURIDAD ---
-        // A. Si la petición viene con nroCelular (Bot)
         if (nroCelular != null && !nroCelular.isEmpty()) {
             if (alumno.getTelefonoAlumno() == null) {
-                // Vinculación automática la primera vez
                 alumno.setTelefonoAlumno(nroCelular);
                 alumnoRepository.save(alumno);
             } else if (!alumno.getTelefonoAlumno().equals(nroCelular)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body("Error: Este DNI ya está vinculado a otro celular.");
             }
-        } // B. Si viene desde la Web (PC)
-        else {
+        } else {
             if (alumno.getPassword() == null) {
-                // Registro de PIN la primera vez
                 if (pinIngresado == null || pinIngresado.isEmpty()) {
                     return ResponseEntity.badRequest().body("Debes elegir un PIN de seguridad.");
                 }
@@ -83,6 +79,16 @@ public class AlumnoController {
         }
 
         if (seQueda) {
+            // --- NUEVA VALIDACIÓN DE CUPOS PARA LA COCINERA ---
+            if (turnoElegido != null && !turnoElegido.equals("No")) {
+                Long anotadosEnTurno = alumnoRepository.countByTurnoComedor(turnoElegido);
+                if (anotadosEnTurno >= 50) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("El turno de las " + turnoElegido + " ya está lleno (cupo de 50 alcanzado).");
+                }
+            }
+
+            // Mantenemos la restricción de taller
             if ("13:00".equals(alumno.getHoraInicioTaller()) && "12:40".equals(turnoElegido)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body("No podés elegir 12:40 porque tenés taller a las 13:00 hs.");
@@ -125,7 +131,7 @@ public class AlumnoController {
 
     @PutMapping("/reset-comedor")
     public ResponseEntity<String> resetearComedor() {
-        tareaProgramadaService.resetDiarioComedor(); // Llama a la función que ya tenés
+        tareaProgramadaService.resetDiarioComedor(); 
         return ResponseEntity.ok("Comedor reseteado correctamente");
     }
 }
