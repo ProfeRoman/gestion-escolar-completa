@@ -13,10 +13,11 @@ public class Pedido {
 
     // Usamos el objeto Alumno para que Hibernate traiga nombre y apellido automáticamente.
     @ManyToOne
-    @JoinColumn(name = "alumno_id") 
+    @JoinColumn(name = "alumno_id", nullable = true)
     private Alumno alumno; 
 
     private String recreo;     // PRIMER_RECREO o SEGUNDO_RECREO
+    @Column(name = "metodo_pago", nullable = true)
     private String metodoPago; // EFECTIVO, TRANSFERENCIA, QR
     private boolean pagado;    // True si es Transf/QR
     private boolean entregado; // Para que los de 6to marquen cuando lo dan
