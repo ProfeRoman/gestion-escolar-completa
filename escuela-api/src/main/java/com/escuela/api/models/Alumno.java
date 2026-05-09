@@ -27,9 +27,9 @@ public class Alumno {
     @Column(name = "turno_comedor")
     private String turnoComedor;
     private Double nota;
-    @Column(name = "telefono_alumno")
+    @Column(name = "telefono_alumno", nullable = true)
     private String telefonoAlumno;
-    @Column(name = "password")
+    @Column(name = "password", nullable = true)
     private String password;
 
     public String getTelefonoAlumno() {
