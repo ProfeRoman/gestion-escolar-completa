@@ -38,7 +38,7 @@ public class CalentitoController {
             return "PRIMER_RECREO_TARDE";
         }
         // Ventana 4 amplia para que puedas probar ahora
-        if (ahora.isAfter(LocalTime.of(13, 45)) && ahora.isBefore(LocalTime.of(23, 45))) {
+        if (ahora.isAfter(LocalTime.of(13, 45)) && ahora.isBefore(LocalTime.of(14, 45))) {
             return "SEGUNDO_RECREO_TARDE";
         }
 
