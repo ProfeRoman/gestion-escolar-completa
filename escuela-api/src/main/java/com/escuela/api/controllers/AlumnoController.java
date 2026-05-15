@@ -73,7 +73,7 @@ public class AlumnoController {
 
         // Mantenemos tu restricción horaria
         LocalTime ahora = LocalTime.now();
-        if (ahora.isAfter(LocalTime.of(23, 0))) {
+        if (ahora.isAfter(LocalTime.of(9, 0))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("El registro para el comedor cierra a las 9:00 AM.");
         }
