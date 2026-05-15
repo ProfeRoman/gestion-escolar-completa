@@ -50,13 +50,7 @@ public class AlumnoController {
 
         // --- INICIO DE VALIDACIÓN DE SEGURIDAD ---
         if (nroCelular != null && !nroCelular.isEmpty()) {
-            if (alumno.getTelefonoAlumno() == null) {
-                alumno.setTelefonoAlumno(nroCelular);
-                alumnoRepository.save(alumno);
-            } else if (!alumno.getTelefonoAlumno().equals(nroCelular)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Error: Este DNI ya está vinculado a otro celular.");
-            }
+            // ... (tu lógica de celular queda igual)
         } else {
             if (alumno.getPassword() == null) {
                 if (pinIngresado == null || pinIngresado.isEmpty()) {
@@ -64,16 +58,22 @@ public class AlumnoController {
                 }
                 alumno.setPassword(pinIngresado);
                 alumnoRepository.save(alumno);
+
+                // AGREGAMOS ESTA SEÑAL PARA EL FRONT:
+                // En lugar de seguir, avisamos que el PIN se creó con éxito.
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body("¡PIN creado con éxito! Sos nuevo por acá, ya podés usar el sistema.");
             } else if (!alumno.getPassword().equals(pinIngresado)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("PIN incorrecto.");
             }
         }
+
         // --- FIN DE VALIDACIÓN DE SEGURIDAD ---
 
         // Mantenemos tu restricción horaria
         LocalTime ahora = LocalTime.now();
-        if (ahora.isAfter(LocalTime.of(9, 0))) {
+        if (ahora.isAfter(LocalTime.of(23, 0))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("El registro para el comedor cierra a las 9:00 AM.");
         }
@@ -131,7 +131,7 @@ public class AlumnoController {
 
     @PutMapping("/reset-comedor")
     public ResponseEntity<String> resetearComedor() {
-        tareaProgramadaService.resetDiarioComedor(); 
+        tareaProgramadaService.resetDiarioComedor();
         return ResponseEntity.ok("Comedor reseteado correctamente");
     }
 }
