@@ -135,10 +135,10 @@ public class AlumnoController {
     }
 
     @PostMapping("/admin/login")
-    @CrossOrigin(origins = "http://127.0.0.1:5500") // ◄ Asegura el permiso para tu VS Code local
-    public ResponseEntity<?> validarAccesoAdmin(@RequestParam String password) { // ◄ Cambiado a 'password'
-        
-        // 🔒 Contraseña real bajo llave en el servidor
+    @CrossOrigin(origins = "*") // ◄ Poné el asterisco para abrir el paso a Firebase
+    public ResponseEntity<?> validarAccesoAdmin(@RequestParam String password) {
+
+        // 🔒 Tu contraseña nueva impecable
         String claveCorrecta = "Director275";
 
         if (claveCorrecta.equals(password)) {
@@ -147,9 +147,5 @@ public class AlumnoController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"autorizado\": false}");
         }
     }
-    
-    
-    
-    
-    
+
 }

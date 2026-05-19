@@ -1,0 +1,1 @@
+UPDATE alumnos SET password = NULL;

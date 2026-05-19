@@ -1,0 +1,8 @@
+# 1. Preparar todos los archivos modificados
+git add .
+
+# 2. Etiquetar el cambio (el mensaje entre comillas es para vos)
+git commit -m "Configuración final para deploy y fix de bienvenida"
+
+# 3. Subir el código a la nube
+git push origin main

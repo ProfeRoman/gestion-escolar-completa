@@ -1,0 +1,7 @@
+me gustaria realizar una API para la escuela mediante la cual toda la comunidad educativa esté informada sobre lo que 
+pasa en el dia a dia en la escuela, es decir, que los padres puedan acceder a ella a traves de una app (un frontend) y 
+ver las inanistencias que tienen sus hijos, horarios, dias y horarios de talleres, comedor, fechas de examenes, historial 
+de cada uno de sus hijos, tambien un control para los docentes, que materia imparten, el horario, etc etc. Ademas de todo 
+lo que vos me puedas sugerir será bienvenido!. El frontend lo voy hacer con Angular en HTML, CSS y JAVASCRIPT y boostrap 
+tambien; para despues alojarlo en algun servidor gratuito. Por otro lado , el backend lo voy hacer en Java con Spring Boot
+ que tambien irá alojado en otro servidor gratuito. ¿Cómo lo ves?

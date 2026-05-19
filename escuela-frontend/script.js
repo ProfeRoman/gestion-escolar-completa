@@ -13,7 +13,7 @@ async function accesoGestionDirectiva() {
     const { value: password } = await Swal.fire({
         title: 'Acceso Restringido',
         text: 'Ingrese la Clave de Profesor:',
-        input: 'password', // Esto es lo que pone los asteriscos/puntos
+        input: 'password',
         inputPlaceholder: 'Contraseña',
         inputAttributes: {
             autocapitalize: 'off',
@@ -29,22 +29,44 @@ async function accesoGestionDirectiva() {
     });
 
     if (password) {
-        // Aquí va tu lógica de validación
-        if (password === "EmoTTi26") {
-            modoAdmin = true;
-            fetch(API_ALUMNOS)
-                .then(res => res.json())
-                .then(alumnos => {
-                    document.getElementById('loginPadre').style.display = 'none';
-                    document.getElementById('panelAdmin').style.display = 'block';
-                    renderizarTarjetas(alumnos);
-                })
+        try {
+            // 🏠 Pegamos localmente usando la variable unificada 'password'
+            // const respuesta = await fetch(`http://localhost:8080/alumnos/admin/login?password=${password}`, {
+            //     method: 'POST'
+            // 🌍 CAMBIO PARA PRODUCCIÓN: Apuntamos al servidor real en Railway
+                const respuesta = await fetch(`https://gestion-escolar-completa-production.up.railway.app/alumnos/admin/login?password=${password}`, {
+                    method: 'POST'
+            });
 
-        } else {
+
+            if (respuesta.ok) {
+                modoAdmin = true;
+                
+                // Carga los alumnos del backend local
+                fetch(API_ALUMNOS)
+                    .then(res => res.json())
+                    .then(alumnos => {
+                        document.getElementById('loginPadre').style.display = 'none';
+                        document.getElementById('panelAdmin').style.display = 'block';
+                        renderizarTarjetas(alumnos);
+                    });
+
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Clave incorrecta',
+                    background: '#1a1a1a',
+                    color: '#ffffff'
+                });
+            }
+
+        } catch (error) {
+            console.error("Error de comunicación:", error);
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
-                text: 'Clave incorrecta',
+                title: 'Error de comunicación',
+                text: 'No se pudo conectar con el servidor local de Java.',
                 background: '#1a1a1a',
                 color: '#ffffff'
             });
@@ -189,20 +211,39 @@ async function prepararAnotacionComedor() {
     });
 }
 
-// 2. Ejecución definitiva
+// 2. Ejecución definitiva (MODIFICADA PARA DETECTAR ALUMNO NUEVO)
 async function ejecutarAnotacionDefinitiva(turno, pin) {
     const url = `${API_ALUMNOS}/${alumnoLogueado.id}/comedor?seQueda=true&turnoElegido=${turno}&pinIngresado=${pin}`;
 
     try {
         const res = await fetch(url, { method: 'PUT' });
 
+        // SI ES UN ALUMNO NUEVO (Status 201)
+        if (res.status === 201) {
+            const mensajeBienvenida = await res.text();
+            await Swal.fire({
+                title: '¡Bienvenido al sistema!',
+                text: mensajeBienvenida,
+                icon: 'info',
+                confirmButtonColor: '#4caf50',
+                background: '#1a1a1a',
+                color: '#ffffff'
+            });
+            document.getElementById('selectorHorarios').style.display = 'none';
+            document.getElementById('pinIngresado').value = ''; // Limpiamos el PIN
+            return; 
+        }
+
+        // SI ES UN LOGIN NORMAL (Status 200)
         if (res.ok) {
             Swal.fire({
                 title: '¡Anotado!',
                 text: `Éxito. Te esperamos a las ${turno} hs.`,
                 icon: 'success',
                 timer: 3000,
-                showConfirmButton: false
+                showConfirmButton: false,
+                background: '#1a1a1a',
+                color: '#ffffff'
             });
             alumnoLogueado.turnoComedor = turno;
             document.getElementById('selectorHorarios').style.display = 'none';
@@ -213,7 +254,9 @@ async function ejecutarAnotacionDefinitiva(turno, pin) {
                 title: 'Atención',
                 text: errorMsg,
                 icon: 'error',
-                confirmButtonColor: '#ff9800'
+                confirmButtonColor: '#ff9800',
+                background: '#1a1a1a',
+                color: '#ffffff'
             });
         }
     } catch (e) {
@@ -268,103 +311,146 @@ async function anotarComedor(seQueda) {
 
 // 5. CALENTITOS
 async function realizarPedidoRapido(id, metodo) {
-    // 1. Pedimos el PIN con SweetAlert (Estilo password para que no se vea)
-    const { value: pin } = await Swal.fire({
-        title: 'Seguridad',
-        text: 'Ingresá tu PIN de 4 dígitos:',
-        input: 'password',
-        inputAttributes: {
-            maxlength: 4,
-            autocapitalize: 'off',
-            autocorrect: 'off'
-        },
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        confirmButtonText: 'Confirmar',
-        confirmButtonColor: '#ff9800',
-        background: '#1a1a1a',
-        color: '#ffffff'
-    });
-
-    // Si cancela o no pone nada, salimos sin error
-    if (!pin) return;
-
-    if (pin.length < 4) {
-        Swal.fire({
-            title: 'PIN Inválido',
-            text: 'Debes ingresar los 4 dígitos.',
-            icon: 'warning',
-            confirmButtonColor: '#ff9800'
-        });
-        return;
-    }
-
-    // 2. Si es transferencia, pedimos confirmación elegante
-    if (metodo === 'TRANSFERENCIA') {
-        const confirmacion = await Swal.fire({
-            title: 'Confirmar Transferencia',
-            html: 'ALIAS: <b>Promo2026.eetp</b><br><br>¿Ya realizaste el pago?',
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, confirmar',
-            cancelButtonText: 'No, esperar',
-            confirmButtonColor: '#4caf50',
-            cancelButtonColor: '#f44336'
-        });
-
-        if (!confirmacion.isConfirmed) return;
-    }
+    const LIMITE_DIARIO = 6; 
 
     try {
+        // --- VALIDACIÓN DE LÍMITE CON SEGURO DE FALLOS ---
+        try {
+            const respCheck = await fetch(`${API_CALENTITOS}/hoy/${id}`);
+            if (respCheck.ok) {
+                const pedidosHoy = await respCheck.json();
+                if (pedidosHoy.length >= LIMITE_DIARIO) {
+                    Swal.fire({
+                        title: 'Límite alcanzado',
+                        text: `Ya pediste ${LIMITE_DIARIO} calentitos hoy. ¡Hay que dejar para el resto!`,
+                        icon: 'warning',
+                        confirmButtonColor: '#ff9800',
+                        background: '#1a1a1a',
+                        color: '#ffffff'
+                    });
+                    return; 
+                }
+            }
+        } catch (errorValidacion) {
+            // Si el endpoint no existe o falla, logueamos el error 
+            // pero NO cortamos la ejecución para que puedan seguir comprando.
+            console.warn("No se pudo verificar el límite, el endpoint /hoy no responde.");
+        }
+        // -----------------------------------------------
+
+        // 1. Pedimos el PIN (Tu código original que funciona perfecto)
+        const { value: pin } = await Swal.fire({
+            title: 'Seguridad',
+            text: 'Ingresá tu PIN de 4 dígitos:',
+            input: 'password',
+            inputAttributes: {
+                maxlength: 4,
+                autocapitalize: 'off',
+                autocorrect: 'off'
+            },
+            showCancelButton: true,
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Confirmar',
+            confirmButtonColor: '#ff9800',
+            background: '#1a1a1a',
+            color: '#ffffff'
+        });
+
+        if (!pin) return;
+
+        if (pin.length < 4) {
+            Swal.fire({ title: 'PIN Inválido', text: 'Debes ingresar los 4 dígitos.', icon: 'warning', confirmButtonColor: '#ff9800' });
+            return;
+        }
+
+        // 2. Confirmación de transferencia
+        if (metodo === 'TRANSFERENCIA') {
+            const confirmacion = await Swal.fire({
+                title: 'Confirmar Transferencia',
+                html: 'ALIAS: <b>Promo2026.eetp</b><br><br>¿Confirmás el pago?',
+                icon: 'info',
+                showCancelButton: false, 
+                confirmButtonText: 'Sí, confirmar',
+                confirmButtonColor: '#4caf50',
+                background: '#1a1a1a',
+                color: '#ffffff'
+            });
+            if (!confirmacion.isConfirmed) return;
+        }
+
+        // 3. Ejecución del pedido (POST)
         const response = await fetch(`${API_CALENTITOS}/pedir?pinIngresado=${pin}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ alumnoId: id, metodoPago: metodo })
         });
 
-        // 3. Manejo de Seguridad (PIN incorrecto)
-        if (response.status === 401) {
-            Swal.fire({
-                title: 'Seguridad',
-                text: 'PIN INCORRECTO. El pedido no se registró.',
-                icon: 'error',
-                confirmButtonColor: '#ff9800'
-            });
-            return;
-        }
-
-        // 4. Otros errores del servidor
-        if (!response.ok) {
-            const errorTexto = await response.text();
-            Swal.fire({
-                title: 'Atención',
-                text: errorTexto,
-                icon: 'warning',
-                confirmButtonColor: '#ff9800'
-            });
-            return;
-        }
-
+        // Manejo de respuestas del servidor...
+        // --- NUEVA VALIDACIÓN PARA ALUMNO NUEVO ---
         const texto = await response.text();
 
-        // 5. Éxito o Horario Cerrado
-        if (texto === "HORARIO_CERRADO") {
+        if (texto === "USUARIO_SIN_PIN") {
             Swal.fire({
-                title: 'Sistema Cerrado',
-                text: 'El sistema ya no acepta pedidos por hoy.',
-                icon: 'info',
-                confirmButtonColor: '#ff9800'
+                title: '¡Hola! Sos nuevo por acá',
+                text: 'Registrá un PIN secreto de 4 números para tus compras:',
+                input: 'password',
+                inputAttributes: { maxlength: 4, inputmode: 'numeric', pattern: '[0-9]*' },
+                showCancelButton: true,
+                confirmButtonText: 'Registrar PIN',
+                confirmButtonColor: '#28a745'
+            }).then((result) => {
+                if (result.isConfirmed && result.value.length === 4) {
+                    asignarNuevoPin(id, result.value);
+                }
             });
-        } else {
-            Swal.fire({
-                title: '¡Pedido Realizado!',
-                text: texto,
-                icon: 'success',
-                timer: 3000,
-                showConfirmButton: false
-            });
+            return;
+        }
+    
+        if (response.status === 401) {
+            Swal.fire({ title: 'Seguridad', text: 'PIN INCORRECTO.', icon: 'error', confirmButtonColor: '#ff9800' });
+            return;
         }
 
+        if (!response.ok) {
+            // Borramos el await y usamos la variable 'texto' que ya existe
+            Swal.fire({ title: 'Atención', text: texto, icon: 'warning', confirmButtonColor: '#ff9800' });
+            return;
+        }
+
+       
+        if (texto === "HORARIO_CERRADO") {
+            Swal.fire({
+                title: 'Sistema en pausa',
+                text: 'Preguntale a Quique, nuestro chatbot por los horarios.',
+                icon: 'info',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6f42c1',
+                background: '#ffffff',
+                color: '#545454'
+            });
+        } else if (texto.includes("PEDIDO_GUARDADO")) {
+            const partes = texto.split("|");
+            const nombreRecreo = partes[1] || "";
+
+            // Creamos el mensaje dinámico según el método
+            let mensajeFinal = "";
+            if (metodo === 'EFECTIVO') {
+                mensajeFinal = "Acercate al Hornito para pagar y retirar.";
+            } else {
+                mensajeFinal = "Mostrá el comprobante de transferencia en el Hornito.";
+            }
+
+            await Swal.fire({
+                title: '¡Excelente!',
+                html: `Pedido anotado para el <b>${nombreRecreo}</b>.<br><br>${mensajeFinal}`,
+                icon: 'success',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#4caf50',
+                background: '#1a1a1a',
+                color: '#ffffff'
+            });
+        }
+        
     } catch (e) {
         Swal.fire({
             title: 'Error de conexión',
@@ -373,8 +459,6 @@ async function realizarPedidoRapido(id, metodo) {
         });
     }
 }
-
-
 
 
 // 6. GESTIÓN PROFESOR (ABM)
@@ -670,5 +754,53 @@ function filtrarAlumnos() {
     tarjetas.forEach(tarjeta => {
         const contenido = tarjeta.innerText.toLowerCase();
         tarjeta.style.display = contenido.includes(texto) ? "block" : "none";
+    });
+}
+
+function asignarNuevoPin(id, pin) {
+    // Usamos backticks (`) para poder meter las variables directo en la URL
+    fetch(`/asignar-pin?id=${id}&nuevoPin=${pin}`, { 
+        method: 'POST' 
+    })
+    .then(res => res.text())
+    .then(data => {
+        if (data === "PIN_GUARDADO_EXITOSAMENTE") {
+            Swal.fire({
+                title: '¡PIN Guardado!',
+                text: 'Tu clave personal ya está registrada. Ahora intentá hacer el pedido de nuevo con ese PIN.',
+                icon: 'success',
+                confirmButtonColor: '#28a745'
+            });
+        } else {
+            Swal.fire('Error', 'No se pudo guardar el PIN. Probá de nuevo.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Hubo un problema de conexión con el servidor.', 'error');
+    });
+}
+
+function asignarNuevoPin(id, pin) {
+    // Usamos la variable API_CALENTITOS que ya tenés definida arriba
+    fetch(`${API_CALENTITOS}/asignar-pin?id=${id}&nuevoPin=${pin}`, { 
+        method: 'POST' 
+    })
+    .then(res => res.text())
+    .then(data => {
+        if (data === "PIN_GUARDADO_EXITOSAMENTE") {
+            Swal.fire({
+                title: '¡PIN Guardado!',
+                text: 'Tu clave personal ya está registrada. Ahora intentá hacer el pedido de nuevo con ese PIN.',
+                icon: 'success',
+                confirmButtonColor: '#28a745'
+            });
+        } else {
+            Swal.fire('Error', 'No se pudo guardar el PIN. Probá de nuevo.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire('Error', 'Hubo un problema de conexión con el servidor.', 'error');
     });
 }
