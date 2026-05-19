@@ -70,7 +70,6 @@ public class AlumnoController {
         }
 
         // --- FIN DE VALIDACIÓN DE SEGURIDAD ---
-
         // Mantenemos tu restricción horaria
         LocalTime ahora = LocalTime.now();
         if (ahora.isAfter(LocalTime.of(9, 0))) {
@@ -134,4 +133,23 @@ public class AlumnoController {
         tareaProgramadaService.resetDiarioComedor();
         return ResponseEntity.ok("Comedor reseteado correctamente");
     }
+
+    @PostMapping("/admin/login")
+    @CrossOrigin(origins = "http://127.0.0.1:5500") // ◄ Asegura el permiso para tu VS Code local
+    public ResponseEntity<?> validarAccesoAdmin(@RequestParam String password) { // ◄ Cambiado a 'password'
+        
+        // 🔒 Contraseña real bajo llave en el servidor
+        String claveCorrecta = "Director275";
+
+        if (claveCorrecta.equals(password)) {
+            return ResponseEntity.ok().body("{\"autorizado\": true}");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"autorizado\": false}");
+        }
+    }
+    
+    
+    
+    
+    
 }
