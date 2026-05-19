@@ -135,16 +135,49 @@ public class AlumnoController {
     }
 
     @PostMapping("/admin/login")
-    @CrossOrigin(origins = "*") // ◄ Poné el asterisco para abrir el paso a Firebase
+    @CrossOrigin(origins = "*") // asterisco para abrir el paso a Firebase
     public ResponseEntity<?> validarAccesoAdmin(@RequestParam String password) {
 
-        // 🔒 Tu contraseña nueva impecable
         String claveCorrecta = "Director275";
 
         if (claveCorrecta.equals(password)) {
             return ResponseEntity.ok().body("{\"autorizado\": true}");
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"autorizado\": false}");
+        }
+    }
+
+    @PostMapping("/hornito/login")
+    @CrossOrigin(origins = "*") // Permite el acceso desde Firebase en producción
+    public ResponseEntity<?> validarAccesoHornito(@RequestParam String password) {
+
+        // 🔒 La clave del kiosco protegida en el servidor
+        String claveCorrecta = "Promo26ETP";
+
+        if (claveCorrecta.equals(password)) {
+            return ResponseEntity.ok().body("{\"autorizado\": true}");
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("{\"autorizado\": false}");
+        }
+    }
+
+    @PutMapping("/comedor/resetear-dia")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<?> resetearComedorDiario(@RequestParam String password) {
+        // 🔐 Podés cambiar esta clave por la que vos quieras
+        String claveCorrecta = "AdminComedor275";
+
+        if (!claveCorrecta.equals(password)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Contraseña incorrecta. No estás autorizado.");
+        }
+
+        try {
+            alumnoRepository.resetearComedorMasivo();
+            return ResponseEntity.ok("El comedor ha sido reseteado exitosamente para el nuevo día.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al resetear el comedor: " + e.getMessage());
         }
     }
 

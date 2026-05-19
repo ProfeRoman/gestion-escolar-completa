@@ -31,10 +31,10 @@ public class CalentitoController {
         if (ahora.isAfter(LocalTime.of(6, 0)) && ahora.isBefore(LocalTime.of(8, 0))) {
             return "PRIMER_RECREO_MAÑANA";
         }
-        if (ahora.isAfter(LocalTime.of(8, 30)) && ahora.isBefore(LocalTime.of(10, 00))) {
+        if (ahora.isAfter(LocalTime.of(8, 30)) && ahora.isBefore(LocalTime.of(9, 50))) {
             return "SEGUNDO_RECREO_MAÑANA";
         }
-        if (ahora.isAfter(LocalTime.of(11, 30)) && ahora.isBefore(LocalTime.of(13, 15))) {
+        if (ahora.isAfter(LocalTime.of(12, 00)) && ahora.isBefore(LocalTime.of(13, 15))) {
             return "PRIMER_RECREO_TARDE";
         }
         // Ventana 4 amplia para que puedas probar ahora
