@@ -1,10 +1,14 @@
-//CONFIGURACION LOCAL
-//const API_ALUMNOS = 'http://localhost:8080/alumnos';
+// CONFIGURACION LOCAL 
+//const API_ALUMNOS = 'http://127.0.0.1:8080/alumnos';
 //const API_CALENTITOS = 'http://127.0.0.1:8080/api/calentitos';
 
 //CONFIGURACION RAILWAY (NUBE)
-const API_ALUMNOS = 'https://gestion-escolar-completa-production.up.railway.app/alumnos';
-const API_CALENTITOS = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos';
+//const API_ALUMNOS = 'https://gestion-escolar-completa-production.up.railway.app/alumnos';
+//const API_CALENTITOS = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos';
+
+//CONFIGURACIÓN SERVIDOR ESCUELA
+const API_ALUMNOS = 'http://192.168.0.101:8080/alumnos';
+const API_CALENTITOS = 'http://192.168.0.101:8080/api/calentitos';
 
 let modoAdmin = false;
 let alumnoLogueado = null;
@@ -30,14 +34,15 @@ async function accesoGestionDirectiva() {
 
     if (password) {
         try {
-            // 🏠 Pegamos localmente usando la variable unificada 'password'
-            // const respuesta = await fetch(`http://localhost:8080/alumnos/admin/login?password=${password}`, {
-            //     method: 'POST'
-            // 🌍 CAMBIO PARA PRODUCCIÓN: Apuntamos al servidor real en Railway
-                const respuesta = await fetch(`https://gestion-escolar-completa-production.up.railway.app/alumnos/admin/login?password=${password}`, {
-                    method: 'POST'
+            // ENTORNO LOCAL (Usa la constante unificada)
+            const respuesta = await fetch(`${API_ALUMNOS}/admin/login?password=${password}`, {
+                method: 'POST'
             });
 
+            // // ENTORNO PRODUCCIÓN: Apuntamos al servidor real en Railway
+            // const respuesta = await fetch(`https://gestion-escolar-completa-production.up.railway.app/alumnos/admin/login?password=${password}`, {
+            //     method: 'POST'
+            // });
 
             if (respuesta.ok) {
                 modoAdmin = true;
@@ -74,6 +79,66 @@ async function accesoGestionDirectiva() {
     }
 }
 
+
+async function accesoHornito() {
+    const { value: password } = await Swal.fire({
+        title: 'Acceso Restringido',
+        text: 'Ingresá la contraseña del Hornito:',
+        input: 'password',
+        inputPlaceholder: 'Contraseña',
+        inputAttributes: {
+            autocapitalize: 'off',
+            autocorrect: 'off'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Ingresar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ff8c00', 
+        cancelButtonColor: '#f44336',
+        background: '#1a1a1a',
+        color: '#ffffff'
+    });
+
+    if (password) {
+        try {
+            // ENTORNO LOCAL
+            const urlLocal = `${API_ALUMNOS}/hornito/login?password=${password}`;
+
+            const respuesta = await fetch(urlLocal, {
+                 method: 'POST'
+            });
+            
+            // ENTORNO PRODUCCION
+            // const urlProduction = `https://gestion-escolar-completa-production.up.railway.app/alumnos/hornito/login?password=${password}`;
+            
+            // const respuesta = await fetch(urlProduction, {
+            //      method: 'POST'
+            // });
+
+            if (respuesta.ok) {
+                window.location.href = "cocina.html";
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Contraseña del Hornito incorrecta',
+                    background: '#1a1a1a',
+                    color: '#ffffff'
+                });
+            }
+        } catch (error) {
+            console.error("Error de comunicación:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de comunicación',
+                text: 'No se pudo conectar con el servidor.',
+                background: '#1a1a1a',
+                color: '#ffffff'
+            });
+        }
+    }
+}
+
 // 2. ACCESO ALUMNO/PADRE
 async function accesoPadre() {
     const dniInput = document.getElementById('dniConsulta').value.trim();
@@ -88,7 +153,7 @@ async function accesoPadre() {
 
         if (data && data.length > 0) {
             modoAdmin = false;
-            alumnoLogueado = data[0];
+            alumnoLogueado = data[0]; //guardamos los datos del alumno logueado
 
             document.getElementById('loginPadre').style.display = 'none';
             document.getElementById('panelAdmin').style.display = 'block';
@@ -110,6 +175,7 @@ async function accesoPadre() {
 // 3. RENDERIZADO DE TARJETAS
 function renderizarTarjetas(alumnos) {
     const container = document.getElementById('alumnosContainer');
+    if (!container) return;
     container.innerHTML = '';
 
     alumnos.forEach(alumno => {
@@ -155,6 +221,7 @@ function renderizarTarjetas(alumnos) {
         container.appendChild(card);
     });
 }
+
 
 // 4. LÓGICA DE COMEDOR (MODIFICADA CON PIN)
 async function prepararAnotacionComedor() {
@@ -332,13 +399,10 @@ async function realizarPedidoRapido(id, metodo) {
                 }
             }
         } catch (errorValidacion) {
-            // Si el endpoint no existe o falla, logueamos el error 
-            // pero NO cortamos la ejecución para que puedan seguir comprando.
             console.warn("No se pudo verificar el límite, el endpoint /hoy no responde.");
         }
-        // -----------------------------------------------
 
-        // 1. Pedimos el PIN (Tu código original que funciona perfecto)
+        // 1. Pedimos el PIN 
         const { value: pin } = await Swal.fire({
             title: 'Seguridad',
             text: 'Ingresá tu PIN de 4 dígitos:',
@@ -385,8 +449,6 @@ async function realizarPedidoRapido(id, metodo) {
             body: JSON.stringify({ alumnoId: id, metodoPago: metodo })
         });
 
-        // Manejo de respuestas del servidor...
-        // --- NUEVA VALIDACIÓN PARA ALUMNO NUEVO ---
         const texto = await response.text();
 
         if (texto === "USUARIO_SIN_PIN") {
@@ -412,12 +474,10 @@ async function realizarPedidoRapido(id, metodo) {
         }
 
         if (!response.ok) {
-            // Borramos el await y usamos la variable 'texto' que ya existe
             Swal.fire({ title: 'Atención', text: texto, icon: 'warning', confirmButtonColor: '#ff9800' });
             return;
         }
 
-       
         if (texto === "HORARIO_CERRADO") {
             Swal.fire({
                 title: 'Sistema en pausa',
@@ -432,7 +492,6 @@ async function realizarPedidoRapido(id, metodo) {
             const partes = texto.split("|");
             const nombreRecreo = partes[1] || "";
 
-            // Creamos el mensaje dinámico según el método
             let mensajeFinal = "";
             if (metodo === 'EFECTIVO') {
                 mensajeFinal = "Acercate al Hornito para pagar y retirar.";
@@ -461,50 +520,7 @@ async function realizarPedidoRapido(id, metodo) {
 }
 
 
-// 6. GESTIÓN PROFESOR (ABM)
-async function verDetalleCompleto(id) {
-    // 1. Buscamos al alumno en la lista que ya bajamos (esto evita errores de fetch)
-    const res = await fetch(API_ALUMNOS);
-    const todos = await res.json();
-    const alum = todos.find(a => a.id === id);
-
-    window.alumnoActualId = id;
-
-    // 2. Cargamos los datos en el modal
-    document.getElementById('detNombre').innerText = `${alum.nombre} ${alum.apellido}`;
-    document.getElementById('detDni').innerText = alum.dni;
-    document.getElementById('detTaller').innerText = alum.horaInicioTaller || "S/A";
-    document.getElementById('detComedor').innerText = alum.turnoComedor || "No";
-
-    // 3. SEPARACIÓN DE VISTAS (La clave para limpiar el modal)
-    const seccionDireccion = document.getElementById('seccionEdicion');
-    const seccionOperativa = document.getElementById('seccionOperativaAlumno');
-
-    if (modoAdmin) {
-        // SOS PROFE: Ves botones de Taller y WhatsApp. No ves Calentitos.
-        seccionDireccion.style.display = 'block';
-        seccionOperativa.style.display = 'none';
-
-        // Configuramos el botón de WhatsApp dinámicamente
-        const btnWsp = document.getElementById('btnWspDinamico');
-        if (btnWsp) btnWsp.onclick = () => notificarWhatsApp(alum.telefonoPadre, alum.nombre);
-    } else {
-        // SOS ALUMNO: Ves Comedor y Calentitos. No ves Gestión.
-        seccionDireccion.style.display = 'none';
-        seccionOperativa.style.display = 'block';
-    }
-
-    document.getElementById('modalDetalle').style.display = 'flex';
-}
-
-function cerrarModal() {
-    document.getElementById('modalDetalle').style.display = 'none';
-}
-
-function salir() { 
-    location.reload(); 
-}
-
+//6. GESTIÓN PROFESOR (ABM)
 async function verDetalleCompleto(id) {
     // 1. Ocultamos el bot ANTES de abrir el modal para que no parpadee
     const burbuja = document.getElementById('chatbot-burbuja');
@@ -512,7 +528,7 @@ async function verDetalleCompleto(id) {
     if (burbuja) burbuja.style.setProperty('display', 'none', 'important');
     if (ventana) ventana.style.setProperty('display', 'none', 'important');
 
-    // --- AQUÍ VA TODO TU CÓDIGO ORIGINAL DE CARGA DE DATOS ---
+    //CARGA DE DATOS
     const res = await fetch(API_ALUMNOS);
     const todos = await res.json();
     const alum = todos.find(a => a.id === id);
@@ -532,7 +548,7 @@ async function verDetalleCompleto(id) {
         seccionOperativa.style.display = 'none';
         const btnWsp = document.getElementById('btnWspDinamico');
         if (btnWsp) {
-        btnWsp.style.setProperty('display', 'none', 'important');
+            btnWsp.style.setProperty('display', 'none', 'important');
         }
 
     } else {
@@ -606,7 +622,7 @@ function enviarMensaje() {
     else if (msg.includes("donde") || msg.includes("vivis") || msg.includes("lugar")) {
         r = "Vivo acá adentro, en esta API de la eetp 275 de alcorta. En cualquier momento me tomo el palo";
     }
-    else if (msg.includes("familia") || msg.includes("familia") || msg.includes("familia")) {
+    else if (msg.includes("familia")) {
         r = "Si, tengo dos hermanos: Backend y Frontend. Mis padres son 6to Informática 2026";
     }
     else if (msg.includes("estar") || msg.includes("gusta") || msg.includes("que")) {
@@ -664,7 +680,6 @@ async function rotarTaller() {
         cancelButtonColor: '#f44336',
         background: '#1a1a1a',
         color: '#ffffff',
-        // Esto aplica los estilos oscuros directamente al elemento select y sus opciones
         didOpen: () => {
             const select = Swal.getInput();
             if (select) {
@@ -672,7 +687,6 @@ async function rotarTaller() {
                 select.style.color = '#ffffff';
                 select.style.border = '1px solid #ff9800';
                 
-                // Aplicamos color oscuro a cada una de las opciones de la lista
                 const options = select.querySelectorAll('option');
                 options.forEach(opt => {
                     opt.style.backgroundColor = '#2c2c2c';
@@ -757,50 +771,46 @@ function filtrarAlumnos() {
     });
 }
 
+// ==========================================
+// REGISTRO DE PIN PARA ALUMNOS NUEVOS
+// ==========================================
 function asignarNuevoPin(id, pin) {
-    // Usamos backticks (`) para poder meter las variables directo en la URL
-    fetch(`/asignar-pin?id=${id}&nuevoPin=${pin}`, { 
-        method: 'POST' 
-    })
-    .then(res => res.text())
-    .then(data => {
-        if (data === "PIN_GUARDADO_EXITOSAMENTE") {
-            Swal.fire({
-                title: '¡PIN Guardado!',
-                text: 'Tu clave personal ya está registrada. Ahora intentá hacer el pedido de nuevo con ese PIN.',
-                icon: 'success',
-                confirmButtonColor: '#28a745'
-            });
-        } else {
-            Swal.fire('Error', 'No se pudo guardar el PIN. Probá de nuevo.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        Swal.fire('Error', 'Hubo un problema de conexión con el servidor.', 'error');
-    });
-}
-
-function asignarNuevoPin(id, pin) {
-    // Usamos la variable API_CALENTITOS que ya tenés definida arriba
     fetch(`${API_CALENTITOS}/asignar-pin?id=${id}&nuevoPin=${pin}`, { 
         method: 'POST' 
     })
-    .then(res => res.text())
+    .then(res => {
+        if (!res.ok) throw new Error("Error en el servidor");
+        return res.text();
+    })
     .then(data => {
         if (data === "PIN_GUARDADO_EXITOSAMENTE") {
             Swal.fire({
                 title: '¡PIN Guardado!',
-                text: 'Tu clave personal ya está registrada. Ahora intentá hacer el pedido de nuevo con ese PIN.',
+                text: 'Tu clave personal ya está registrada. Ahora intentá hacer el pedido de nuevo con tu PIN.',
                 icon: 'success',
-                confirmButtonColor: '#28a745'
+                confirmButtonColor: '#28a745',
+                background: '#1a1a1a',
+                color: '#ffffff'
             });
         } else {
-            Swal.fire('Error', 'No se pudo guardar el PIN. Probá de nuevo.', 'error');
+            Swal.fire({
+                title: 'Atención',
+                text: 'No se pudo guardar el PIN. Probá de nuevo.',
+                icon: 'warning',
+                confirmButtonColor: '#ff9800',
+                background: '#1a1a1a',
+                color: '#ffffff'
+            });
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        Swal.fire('Error', 'Hubo un problema de conexión con el servidor.', 'error');
+        console.error('Error al asignar PIN:', error);
+        Swal.fire({
+            title: 'Error de conexión',
+            text: 'Hubo un problema de conexión con el servidor de la escuela.',
+            icon: 'error',
+            background: '#1a1a1a',
+            color: '#ffffff'
+        });
     });
 }

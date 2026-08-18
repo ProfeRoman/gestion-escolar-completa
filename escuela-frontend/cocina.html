@@ -28,7 +28,7 @@
         font-size: 1.8rem;
       }
 
-      .indicadores-container {
+      .indicators-container, .indicadores-container {
         display: flex;
         gap: 15px;
       }
@@ -136,11 +136,13 @@
       //const API_ENTREGAR = "http://localhost:8080/api/calentitos/entregar";
 
       //CONFIGURACIÓN SERVIDOR
-      const API_PENDIENTES = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos/pendientes';
-      const API_ENTREGAR = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos/entregar';
+      //const API_PENDIENTES = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos/pendientes';
+      //const API_ENTREGAR = 'https://gestion-escolar-completa-production.up.railway.app/api/calentitos/entregar';
 
-
-
+      //CONFIGURACIÓN SERVIDOR ESCUELA
+      const API_PENDIENTES = "http://192.168.0.101:8080/api/calentitos/pendientes";
+      const API_ENTREGAR = "http://192.168.0.101:8080/api/calentitos/entregar";
+      
       const opciones = {
         timeZone: "America/Argentina/Buenos_Aires",
         year: "numeric",
@@ -161,7 +163,7 @@
       let totalVendidoHoy = datosGuardados ? datosGuardados.total : 0;
       let idsContados = new Set(datosGuardados ? datosGuardados.ids : []);
 
-      // 3. LOGA PRINCIPAL: Cargar pedidos
+      // 3. LÓGICA PRINCIPAL: Cargar pedidos
       async function cargarPendientes() {
         try {
           const res = await fetch(API_PENDIENTES);

@@ -9,29 +9,14 @@
   </head>
 
   <body>
-    <nav style="display: flex; justify-content: center; gap: 15px; padding: 20px 0;">
-      
-      <a href="cocina.html" class="btn-nav" onclick="event.preventDefault(); Swal.fire({
-       title: 'Acceso Restringido',
-       text: 'Ingresá la contraseña del Hornito:',
-       input: 'password',
-       showCancelButton: true,
-       confirmButtonText: 'Ingresar',
-       cancelButtonText: 'Cancelar',
-       confirmButtonColor: '#ff8c00',
-       cancelButtonColor: '#f44336',
-       background: '#1a1a1a',
-       color: '#ffffff'
-   }).then(res => {
-       if (res.value === 'Hornito2026') { window.location.href = 'cocina.html'; }
-       else if (res.isConfirmed) { Swal.fire({ title: 'Error', text: 'Clave incorrecta', icon: 'error', background: '#1a1a1a', color: '#ffffff' }); }
-   })" 
-   style="background-color: #ff8c00; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
-   🔥 Hornito
-  </a>
-      <a href="comedor.html" class="btn-nav" style="background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">🍴 Comedor</a>
+   <nav style="display: flex; justify-content: center; gap: 15px; padding: 20px 0">
+        <button onclick="accesoHornito()" class="btn-nav" style="background-color: #ff8c00; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; border: none; cursor: pointer; font-weight: bold;">
+            🔥 Hornito
+        </button>
+        <a href="comedor.html" class="btn-nav" style="background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+            🍴 Comedor
+        </a>
     </nav>
-
     <div id="loginPadre" class="stats-panel">
       <div class="logo-container">
         <img src="logo.gif" alt="Logo EETP 275" class="logo-escuela" />
